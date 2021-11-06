@@ -1,6 +1,6 @@
 #lang racket
 
-; https://leetcode.com/problems/two-sum/
+; https://leetcode.com/problems/two-sum
 
 (define (two-sum nums target)
   (define (zip l r)
@@ -31,3 +31,12 @@
                 (= (+ (car l) (car r)) target)))
     (list (cdr l) (cdr r)))))
 
+; https://leetcode.com/problems/palindrome-number
+
+(define (is-palindrome x)
+  (define (digits x)
+    (cond ((< x 10) (list x))
+          (else (cons (modulo x 10) (digits (quotient x 10))))))
+  (define x-digits (digits x))
+  (cond ((< x 0) #f)
+        (else (equal? x-digits (reverse x-digits)))))
