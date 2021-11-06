@@ -24,12 +24,12 @@
     (map cons l r))
   (define pairs (zip nums (range 0 (length nums))))
   (car (for*/list
-      ((l pairs)
-       (r pairs)
-        #:when (and
-                (not (= (cdr l) (cdr r)))
-                (= (+ (car l) (car r)) target)))
-    (list (cdr l) (cdr r)))))
+           ((l pairs)
+            (r pairs)
+            #:when (and
+                    (not (= (cdr l) (cdr r)))
+                    (= (+ (car l) (car r)) target)))
+         (list (cdr l) (cdr r)))))
 
 ; https://leetcode.com/problems/palindrome-number
 
@@ -40,3 +40,30 @@
   (define x-digits (digits x))
   (cond ((< x 0) #f)
         (else (equal? x-digits (reverse x-digits)))))
+
+(define (is-palindrome-cheat x)
+  (define x-str (string->list (number->string x)))
+  (equal? x-str (reverse x-str)))
+
+; https://leetcode.com/problems/longest-common-prefix/
+
+(define (longest-common-prefix strs)
+  (define trie (make-hash))
+  (define (add-to-trie trie x)
+    (cond ((null? x) trie)
+          (else
+           (let*
+               ((current-symb (car x))
+                (current-tail (cdr x))
+                (current-hash (hash-ref trie current-symb (make-hash))))
+             (hash-set! trie current-symb current-hash)
+             (add-to-trie current-hash current-tail)))))
+  (define (check-in-trie trie x pos) 
+    (cond ((null? x) pos)
+          ((hash-has-key? trie (car x)) (check-in-trie (hash-ref trie (car x)) (cdr x) (add1 pos)))
+          (else pos)))
+  
+  (add-to-trie trie (string->list (car strs)))
+  (define prefix-length (apply min (for/list ((i strs))
+                                      (check-in-trie trie (string->list i) 0))))
+  (substring (car strs) 0 prefix-length))
