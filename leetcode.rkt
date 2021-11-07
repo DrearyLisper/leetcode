@@ -113,3 +113,35 @@
                            (is-valid-inner (cdr s) (cdr stack))))))
 
   (is-valid-inner s '()))
+
+; https://leetcode.com/problems/merge-two-sorted-lists/
+
+; val : integer?
+; next : (or/c list-node? #f)
+(struct list-node
+  (val next) #:mutable #:transparent)
+
+; constructor
+(define (make-list-node [val 0])
+  (list-node val #f))
+
+(define (create-list lst)
+  (cond ((empty? lst) #f)
+        (else 
+         (define head (make-list-node (car lst)))
+         (set-list-node-next! head (create-list (cdr lst)))
+         head)))
+
+(define (merge-two-lists l1 l2)
+  (define (take-head lst next)
+    (set-list-node-next! lst next)
+    lst)
+  (cond ((not l1) l2)
+        ((not l2) l1)
+        (else
+         (define l1val (list-node-val l1))
+         (define l2val (list-node-val l2))
+         (cond ((< l1val l2val) (take-head l1 (merge-two-lists (list-node-next l1) l2)))
+               (else (take-head l2 (merge-two-lists l1 (list-node-next l2))))))))
+
+(merge-two-lists (create-list '(1 3 5)) (create-list '(2 4 6)))
