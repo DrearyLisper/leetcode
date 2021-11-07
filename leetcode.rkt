@@ -84,7 +84,32 @@
                            (length-of-common-prefix (car strs) i))))
   (substring (car strs) 0 (add1 prefix-length)))
       
+; https://leetcode.com/problems/valid-parentheses/
 
+(define (is-valid str)
+  (define s (string->list str))
+  (define (is-open c)
+    (member c '(#\( #\[ #\{)))
+  (define (is-close c)
+    (member c '(#\) #\] #\})))
+  (define (does-match a b)
+    (or
+     (and
+      (equal? a #\()
+      (equal? b #\)))
+     (and
+      (equal? a #\[)
+      (equal? b #\]))
+     (and
+      (equal? a #\{)
+      (equal? b #\}))))
+  (define (is-valid-inner s stack)
+    (cond
+      ((empty? s) (empty? stack))
+      ((is-open (car s)) (is-valid-inner (cdr s) (cons (car s) stack)))
+      ((is-close (car s)) (and
+                           (not (empty? stack))
+                           (does-match (car stack) (car s))
+                           (is-valid-inner (cdr s) (cdr stack))))))
 
-
-
+  (is-valid-inner s '()))
