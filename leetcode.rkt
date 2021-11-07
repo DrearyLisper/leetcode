@@ -47,7 +47,7 @@
 
 ; https://leetcode.com/problems/longest-common-prefix/
 
-(define (longest-common-prefix strs)
+(define (longest-common-prefix-hash strs)
   (define trie (make-hash))
   (define (add-to-trie trie x)
     (cond ((null? x) trie)
@@ -65,5 +65,26 @@
   
   (add-to-trie trie (string->list (car strs)))
   (define prefix-length (apply min (for/list ((i strs))
-                                      (check-in-trie trie (string->list i) 0))))
+                                     (check-in-trie trie (string->list i) 0))))
   (substring (car strs) 0 prefix-length))
+
+(define (longest-common-prefix strs)
+  (define (length-of-common-prefix a b)
+    (apply max (cons
+                -1
+                (for/list
+                    ((i a)
+                     (j b)
+                     (k (range 0 (string-length a)))
+                     #:break (not (equal? i j)))
+                  k))))
+  (define prefix-length (apply
+                         min
+                         (for/list ((i strs))
+                           (length-of-common-prefix (car strs) i))))
+  (substring (car strs) 0 (add1 prefix-length)))
+      
+
+
+
+
