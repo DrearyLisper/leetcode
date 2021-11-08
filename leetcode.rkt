@@ -144,4 +144,27 @@
          (cond ((< l1val l2val) (take-head l1 (merge-two-lists (list-node-next l1) l2)))
                (else (take-head l2 (merge-two-lists l1 (list-node-next l2))))))))
 
-(merge-two-lists (create-list '(1 3 5)) (create-list '(2 4 6)))
+; https://leetcode.com/problems/remove-duplicates-from-sorted-array/
+
+(define (remove-duplicates nums)
+  (define (remove-duplicates-inner nums)
+    (cond ((empty? (cdr nums)) nums)
+          ((equal? (car nums) (car (cdr nums))) (remove-duplicates-inner (cdr nums)))
+          (else (cons (car nums) (remove-duplicates-inner (cdr nums))))))
+  (set! nums (remove-duplicates-inner nums))
+  (length nums))
+
+; https://leetcode.com/problems/add-two-numbers/
+
+
+(define (add-two-numbers l1 l2)
+  (define (add-inner l1 l2 carry)
+    (define l1-val (if l1 (list-node-val l1) 0))
+    (define l2-val (if l2 (list-node-val l2) 0))
+    (define l1-next (if l1 (list-node-next l1) #f))
+    (define l2-next (if l2 (list-node-next l2) #f))
+    (define val (+ l1-val l2-val carry))      
+    (if (and (= val 0) (not l1) (not l2))
+        #f
+        (list-node (modulo val 10) (add-inner l1-next l2-next (quotient val 10)))))
+  (add-inner l1 l2 0))
