@@ -168,3 +168,20 @@
         #f
         (list-node (modulo val 10) (add-inner l1-next l2-next (quotient val 10)))))
   (add-inner l1 l2 0))
+
+
+; https://leetcode.com/problems/longest-substring-without-repeating-characters/
+
+(define (length-of-longest-substring s)
+  (define (inner-iteration l r s lengths)
+    (define l-val (if (not (empty? l)) (car l) #f))
+    (define r-val (if (not (empty? r)) (car r) #f))
+    (cond
+      ((and (not l-val) (nor r-val)) lengths)
+      ((and r-val (not (set-member? s r-val))) (inner-iteration l (cdr r) (set-add s r-val) (cons (add1 (set-count s)) lengths)))
+      (l-val (inner-iteration (cdr l) r (set-remove s l-val) lengths))
+      (else (raise "Can't happen"))))
+
+  (if (non-empty-string? s)
+      (apply max (inner-iteration (string->list s) (string->list s) (set) '()))
+      0))
