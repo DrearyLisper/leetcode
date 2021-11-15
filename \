@@ -1,0 +1,17 @@
+#lang racket
+
+(struct regexp
+  (head-node))
+
+(struct regexp-node
+  (next-nodes is-final?))
+
+(define (new-regexp-node)
+  (regexp-node (make-hash) #f))
+
+(define (new-regexp . patterns)
+  (define head-node (new-regexp-node))
+  (define (add-patterns node patterns) )
+  )
+
+(new-regexp-node)
