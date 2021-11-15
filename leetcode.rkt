@@ -185,3 +185,20 @@
   (if (non-empty-string? s)
       (apply max (inner-iteration (string->list s) (string->list s) (set) '()))
       0))
+
+; https://leetcode.com/problems/remove-duplicates-from-sorted-list/
+
+(define (delete-duplicates node)
+  (define (delete-inner head head-next)
+    (define head-next-next (if head-next (list-node-next head-next) #f))
+    (cond
+     ((not head-next) (set-list-node-next! head head-next))
+     ((eq?
+       (list-node-val head)
+       (list-node-val head-next)) (delete-inner head head-next-next))
+     (else (set-list-node-next! head head-next) (delete-inner head-next head-next)))
+    node)
+
+  (cond
+   ((not node) #f)
+   (else (delete-inner node node))))
