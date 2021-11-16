@@ -1,20 +1,20 @@
 #lang racket
 
-(struct regexp
-  (head-node) #:mutable)
+(struct re/regexp
+  (first-state last-state) #:mutable)
 
-(struct state
+(struct re/state
   (edges is-final?) #:mutable)
 
-(struct edge
+(struct re/edge
   (symbol) #:mutable)
 
 (define (new-state)
-  (state (make-hash) #f))
+  (re/state (make-hash) #f))
 
 (define (add-edge state edge)
   (define next-state (new-state))
-  (hash-set! (state-edges state) (edge-symbol edge) next-state)
+  (hash-set! (re/state-edges state) (re/edge-symbol edge) next-state)
   next-state)
 
 (define (add-edges state edges)
@@ -26,26 +26,31 @@
     (add-edges next-state (rest edges)))))
 
 (define (re/symbol symbol)
-  (edge symbol))
+  (re/edge symbol))
 
 (define (re/string string)
   (map re/symbol (string->list string)))
 
-(define (re/match edges)
+;; (define (re/or . patterns))
+
+(define (re/match regexp s)
+  (define symbols (string->list s))
+  (define (match-inner state symbols)
+    (cond
+     ((empty? symbols) (re/state-is-final? state))
+     ((not (hash-has-key? (re/state-edges state) (first symbols))) #f)
+     (else
+      (define next-state (hash-ref (re/state-edges state) (first symbols)))
+      (match-inner next-state (rest symbols)))))
+  (match-inner (re/regexp-first-state regexp) symbols))
+
+(define (re/new-regex patterns)
   (define first-state (new-state))
-  (define final-state (add-edges first-state edges))
-  (define (match s)
-    (define symbols (string->list s))
-    (define (match-inner state symbols)
-      (cond
-       ((empty? symbols) (state-is-final? state))
-       ((not (hash-has-key? (state-edges state) (first symbols))) #f)
-       (else
-        (define next-state (hash-ref (state-edges state) (first symbols)))
-        (match-inner next-state (rest symbols)))))
-    (match-inner first-state symbols))
-  (set-state-is-final?! final-state #t)
-  match)
+  (define final-state (add-edges first-state patterns))
+  (set-re/state-is-final?! final-state #t)
+  (re/regexp first-state final-state))
 
 
-((re/match (re/string "ABC")) "ABC")
+(re/match
+ (re/new-regex (list (re/symbol #\A) (re/symbol #\B) (re/symbol #\C)))
+ "ABC")
