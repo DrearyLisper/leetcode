@@ -12,25 +12,6 @@
 (define (new-state)
   (re/state (make-hash) #f))
 
-(define (add-edge state edge)
-  (define next-state (new-state))
-  (hash-set! (re/state-edges state) (re/edge-symbol edge) next-state)
-  next-state)
-
-(define (add-edges state edges)
-  (cond
-   ((empty? edges) state)
-   (else
-    (define edge (first edges))
-    (define next-state (add-edge state edge))
-    (add-edges next-state (rest edges)))))
-
-(define (re/symbol symbol)
-  (re/edge symbol))
-
-(define (re/string string)
-  (map re/symbol (string->list string)))
-
 ;; (define (re/or . patterns))
 
 (define (re/match regexp s)
@@ -44,13 +25,29 @@
       (match-inner next-state (rest symbols)))))
   (match-inner (re/regexp-first-state regexp) symbols))
 
-(define (re/new-regex patterns)
+(define (re/string s)
+  (define symbols (string->list s))
+
+  (define (add-symbol state symbol)
+    (define next-state (new-state))
+    (hash-set! (re/state-edges state) symbol next-state)
+    next-state)
+
+  (define (add-symbols state symbols)
+    (cond
+     ((empty? symbols) state)
+     (else
+      (define symbol (first symbols))
+      (define next-state (add-symbol state symbol))
+      (add-symbols next-state (rest symbols)))))
+
   (define first-state (new-state))
-  (define final-state (add-edges first-state patterns))
+  (define final-state (add-symbols first-state symbols))
+
   (set-re/state-is-final?! final-state #t)
   (re/regexp first-state final-state))
 
 
 (re/match
- (re/new-regex (list (re/symbol #\A) (re/symbol #\B) (re/symbol #\C)))
+ (re/string "ABC")
  "ABC")
