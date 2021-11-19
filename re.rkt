@@ -12,14 +12,14 @@
 (define (add-state from-state symbol to-state)
   (define has-to-state (hash-has-key? (re/fa-state-edges from-state) symbol))
   (define to-states (if has-to-state
-                        (hash-ref (re/fa-state-edges from-state) symbol)
+                        (get-states from-state symbol)
                         (mutable-set)))
   (set-add! to-states to-state)
   (hash-set! (re/fa-state-edges from-state) symbol to-states))
 
 (define (get-states state symbol)
   (define has-to-state (hash-has-key? (re/fa-state-edges state) symbol))
-  (if has-to-state (hash-ref (re/fa-state-edges state)) #f))
+  (if has-to-state (hash-ref (re/fa-state-edges state) symbol) #f))
 
 
 (define (re/match fa s)
@@ -29,7 +29,7 @@
      ((empty? symbols) (re/fa-state-is-final? state))
      ((not (hash-has-key? (re/fa-state-edges state) (first symbols))) #f)
      (else
-      (define next-states (hash-ref (re/fa-state-edges state) (first symbols)))
+      (define next-states (get-states state (first symbols)))
       (if (> (set-count next-states) 1)
           (raise "Can't match non-determenistic finite automaton")
           (match-inner (set-first next-states) (rest symbols))))))
