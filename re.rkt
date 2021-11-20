@@ -151,6 +151,15 @@
   (bfs first-set-of-states)
   (re/fa (get-state first-set-of-states) #f))
 
+(define (parse regexp)
+  (define symbol (first regexp))
+  (define is-iter (and (not (empty? (rest regexp))) (eq? #\* (first (rest regexp)))))
+  (define fa-symbol (re/iter (re/string->fa (list->string (list symbol)))))
+  (define fa (if is-iter (re/iter fa-symbol) fa-symbol))
+  (define rest-regexp (if is-iter (rest (rest regexp)) (rest regexp)))
+  (if (empty? rest-regexp)
+      fa
+      (re/and fa (parse rest-regexp))))
 
 (define test-1 (re/and
                 (re/string->fa "prefix_")
@@ -167,3 +176,8 @@
 (re/match (re/ndfa->dfa test-1) "prefix_qwe")
 (re/match (re/ndfa->dfa test-2) "a")
 (re/match (re/ndfa->dfa test-3) "qweqweqwe")
+
+(re/match
+ (re/ndfa->dfa (parse (string->list "c*a*b")))
+ "aab"
+ )
