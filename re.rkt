@@ -58,19 +58,50 @@
   (set-re/fa-state-is-final?! last-state #t)
   (re/fa first-state last-state))
 
-(define (re/or a b)
-  (set-re/fa-state-is-final?! (re/fa-last-state a) #f)
-  (set-re/fa-state-is-final?! (re/fa-last-state a) #f)
+(define (re/and a b)
   (define first-state (new-fa-state))
   (define last-state (new-fa-state))
+  (set-re/fa-state-is-final?! (re/fa-last-state a) #f)
+  (set-re/fa-state-is-final?! (re/fa-last-state b) #f)
+
+  (add-state first-state 'eps (re/fa-first-state a))
+  (add-state (re/fa-last-state a) 'eps (re/fa-first-state b))
+  (add-state (re/fa-last-state b) 'eps last-state)
+
+  (set-re/fa-state-is-final?! last-state #t)
+
+  (re/fa first-state last-state))
+
+
+(define (re/or a b)
+  (define first-state (new-fa-state))
+  (define last-state (new-fa-state))
+
+  (set-re/fa-state-is-final?! (re/fa-last-state a) #f)
+  (set-re/fa-state-is-final?! (re/fa-last-state b) #f)
+
   (add-state first-state 'eps (re/fa-first-state a))
   (add-state first-state 'eps (re/fa-first-state b))
+
+  (add-state (re/fa-last-state a) 'eps last-state)
   (add-state (re/fa-last-state b) 'eps last-state)
-  (add-state (re/fa-last-state b) 'eps last-state)
+
   (set-re/fa-state-is-final?! last-state #t)
+
   (re/fa first-state last-state))
 
 (define (re/ndfa->dfa fa)
+  (define new-states (make-hash))
+  (define (get-state set-of-states)
+    (if (hash-has-key? new-states set-of-states)
+        (hash-ref new-states set-of-states)
+        (let ((new-state (new-fa-state))
+              (is-final?
+               (set-map set-of-states (lambda (state) (re/fa-state-is-final? state)))))
+          (hash-set! new-states set-of-states new-state)
+          (set-re/fa-state-is-final?! new-state (foldl (lambda (a b) (or a b)) #f is-final?))
+          new-state)))
+
   (define (closure state)
     (define (closure-inner state clojure)
       (define eps-reachable (get-states state 'eps))
@@ -78,15 +109,38 @@
       (for ((s (in-set eps-reachable))) (closure-inner s clojure))
       clojure)
     (closure-inner state (mutable-set)))
-  (define (symbols states)
+
+  (define (get-symbols-inner states)
     (set-subtract (apply set-union (set-map states get-symbols)) '(eps)))
-  (define (next-states states symbol)
-    (apply mutable-set (apply set-union (set-map states (lambda (state) (set->list (get-states state symbol)))))))
-  (define first-state (closure (re/fa-first-state fa)))
-  (map (lambda (symbol) (cons symbol (next-states first-state symbol))) (symbols first-state)))
+
+  (define (get-next-states set-of-states symbol)
+    (apply mutable-set
+           (apply set-union
+                  (set-map set-of-states
+                           (lambda (state) (set->list (get-states state symbol)))))))
+
+  (define first-set-of-states (closure (re/fa-first-state fa)))
+
+  (define (bfs first-set-of-states)
+    (define state (get-state first-set-of-states))
+    (define symbols (get-symbols-inner first-set-of-states))
+    (for ((symbol symbols))
+      (define next-set-of-states (get-next-states first-set-of-states symbol))
+      (define closure-next-set-of-states (apply mutable-set (apply set-union (set-map next-set-of-states
+                                                                                      (lambda (s) (set->list (closure s)))))))
+      (define next-state (get-state closure-next-set-of-states))
+      (add-state state symbol next-state)
+      (bfs closure-next-set-of-states)))
+
+  (bfs first-set-of-states)
+  (re/fa (get-state first-set-of-states) #f))
 
 
-(define our-fa (re/or (re/string->fa "A") (re/string->fa "B")))
+(define our-fa (re/and
+                (re/string->fa "PREFIX_")
+                (re/or
+                 (re/string->fa "ABC")
+                 (re/string->fa "QWE"))))
 
-(re/match our-fa "A")
-(re/ndfa->dfa our-fa)
+(re/match (re/ndfa->dfa our-fa) "PREFIX_ABC")
+(re/match (re/ndfa->dfa our-fa) "PREFIX_QWE")
