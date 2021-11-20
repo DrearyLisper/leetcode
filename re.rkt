@@ -35,13 +35,17 @@
           (match-inner (set-first next-states) (rest symbols))))))
   (match-inner (re/fa-first-state fa) symbols))
 
+(define alphabet (string->list "abcdefghijklmnopqrstuvwxyz"))
+
 (define (re/string->fa s)
   (define symbols (string->list s))
 
 
   (define (add-symbol state symbol)
     (define next-state (new-fa-state))
-    (add-state state symbol next-state)
+    (if (eq? symbol #\.)
+        (map (lambda (letter) (add-state state letter next-state)) alphabet)
+        (add-state state symbol next-state))
     next-state)
 
   (define (add-symbols state symbols)
@@ -90,8 +94,17 @@
 
   (re/fa first-state last-state))
 
+(define (re/iter a)
+  (add-state (re/fa-last-state a) 'eps (re/fa-first-state a))
+  (add-state (re/fa-first-state a) 'eps (re/fa-last-state a))
+  a)
+
 (define (re/ndfa->dfa fa)
   (define new-states (make-hash))
+
+  (define (has-state set-of-states)
+    (hash-has-key? new-states set-of-states))
+
   (define (get-state set-of-states)
     (if (hash-has-key? new-states set-of-states)
         (hash-ref new-states set-of-states)
@@ -105,8 +118,9 @@
   (define (closure state)
     (define (closure-inner state clojure)
       (define eps-reachable (get-states state 'eps))
-      (set-add! clojure state)
-      (for ((s (in-set eps-reachable))) (closure-inner s clojure))
+      (unless (set-member? clojure state)
+        (set-add! clojure state)
+        (for ((s (in-set eps-reachable))) (closure-inner s clojure)))
       clojure)
     (closure-inner state (mutable-set)))
 
@@ -128,19 +142,28 @@
       (define next-set-of-states (get-next-states first-set-of-states symbol))
       (define closure-next-set-of-states (apply mutable-set (apply set-union (set-map next-set-of-states
                                                                                       (lambda (s) (set->list (closure s)))))))
+      (define had-state (has-state closure-next-set-of-states))
       (define next-state (get-state closure-next-set-of-states))
       (add-state state symbol next-state)
-      (bfs closure-next-set-of-states)))
+      (unless had-state
+       (bfs closure-next-set-of-states))))
 
   (bfs first-set-of-states)
   (re/fa (get-state first-set-of-states) #f))
 
 
-(define our-fa (re/and
-                (re/string->fa "PREFIX_")
+(define test-1 (re/and
+                (re/string->fa "prefix_")
                 (re/or
-                 (re/string->fa "ABC")
-                 (re/string->fa "QWE"))))
+                 (re/iter (re/string->fa "abc"))
+                 (re/string->fa "qwe"))))
 
-(re/match (re/ndfa->dfa our-fa) "PREFIX_ABC")
-(re/match (re/ndfa->dfa our-fa) "PREFIX_QWE")
+(define test-2 (re/iter (re/string->fa "a")))
+
+(define test-3 (re/iter (re/string->fa ".")))
+
+
+(re/match (re/ndfa->dfa test-1) "prefix_abcabcabc")
+(re/match (re/ndfa->dfa test-1) "prefix_qwe")
+(re/match (re/ndfa->dfa test-2) "a")
+(re/match (re/ndfa->dfa test-3) "qweqweqwe")
