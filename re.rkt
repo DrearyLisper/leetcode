@@ -154,30 +154,32 @@
 (define (parse regexp)
   (define symbol (first regexp))
   (define is-iter (and (not (empty? (rest regexp))) (eq? #\* (first (rest regexp)))))
-  (define fa-symbol (re/iter (re/string->fa (list->string (list symbol)))))
+  (define fa-symbol (re/string->fa (list->string (list symbol))))
   (define fa (if is-iter (re/iter fa-symbol) fa-symbol))
   (define rest-regexp (if is-iter (rest (rest regexp)) (rest regexp)))
   (if (empty? rest-regexp)
       fa
       (re/and fa (parse rest-regexp))))
 
-(define test-1 (re/and
-                (re/string->fa "prefix_")
-                (re/or
-                 (re/iter (re/string->fa "abc"))
-                 (re/string->fa "qwe"))))
+;; (define test-1 (re/and
+;;                 (re/string->fa "prefix_")
+;;                 (re/or
+;;                  (re/iter (re/string->fa "abc"))
+;;                  (re/string->fa "qwe"))))
 
-(define test-2 (re/iter (re/string->fa "a")))
+;; (define test-2 (re/iter (re/string->fa "a")))
 
-(define test-3 (re/iter (re/string->fa ".")))
+;; (define test-3 (parse (string->list "aa")))
 
+(define (is-match s p)
+  (re/match (re/ndfa->dfa (parse (string->list p))) s))
 
-(re/match (re/ndfa->dfa test-1) "prefix_abcabcabc")
-(re/match (re/ndfa->dfa test-1) "prefix_qwe")
-(re/match (re/ndfa->dfa test-2) "a")
-(re/match (re/ndfa->dfa test-3) "qweqweqwe")
+;; (re/match (re/ndfa->dfa test-1) "prefix_abcabcabc")
+;; (re/match (re/ndfa->dfa test-1) "prefix_qwe")
+;; (re/match (re/ndfa->dfa test-2) "a")
+;; (re/match (re/ndfa->dfa test-3) "a")
 
-(re/match
- (re/ndfa->dfa (parse (string->list "c*a*b")))
- "aab"
- )
+;; (re/match
+;;  (re/ndfa->dfa (parse (string->list "c*a*b")))
+;;  "aab"
+;;  )
