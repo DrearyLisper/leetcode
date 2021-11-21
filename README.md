@@ -2,9 +2,9 @@
 
 ## easy.rkt
 
-Most of this file contains solutions for **easy** problems from leetcode.com
-For each of **hard** problems there will be separate file that solves it.
-List of solved problems:
+Most of this file contains solutions for **easy** problems from https://leetcode.com  
+For each of **hard** problems there will be separate file that solves it.  
+List of solved problems in ```easy.rkt```:
 - https://leetcode.com/problems/two-sum 
 - https://leetcode.com/problems/palindrome-number
 - https://leetcode.com/problems/longest-common-prefix/
