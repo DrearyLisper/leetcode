@@ -161,25 +161,5 @@
       fa
       (re/and fa (parse rest-regexp))))
 
-;; (define test-1 (re/and
-;;                 (re/string->fa "prefix_")
-;;                 (re/or
-;;                  (re/iter (re/string->fa "abc"))
-;;                  (re/string->fa "qwe"))))
-
-;; (define test-2 (re/iter (re/string->fa "a")))
-
-;; (define test-3 (parse (string->list "aa")))
-
 (define (is-match s p)
   (re/match (re/ndfa->dfa (parse (string->list p))) s))
-
-;; (re/match (re/ndfa->dfa test-1) "prefix_abcabcabc")
-;; (re/match (re/ndfa->dfa test-1) "prefix_qwe")
-;; (re/match (re/ndfa->dfa test-2) "a")
-;; (re/match (re/ndfa->dfa test-3) "a")
-
-;; (re/match
-;;  (re/ndfa->dfa (parse (string->list "c*a*b")))
-;;  "aab"
-;;  )
