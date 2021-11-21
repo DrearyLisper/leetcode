@@ -1,27 +1,36 @@
 #lang racket
 
+;; Finite automaton struct
+;; Contains two states describing first and last state of NDA or NDFA.
+;; Last state will be terminal in most of the cases.
 (struct re/fa
-  (first-state last-state) #:mutable)
+  (first-state last-state) #:mutable #:transparent)
 
+;; State of finite automaton
+;; Contains hash-map of edges and bool indicator whether it's a terminal state.
 (struct re/fa-state
-  (edges is-final?) #:mutable)
+  (edges is-final?) #:mutable #:transparent)
 
 (define (new-fa-state)
   (re/fa-state (make-hash) #f))
 
+;; Adds edge from one state to another
 (define (add-state from-state symbol to-state)
   (define to-states (get-states from-state symbol))
   (set-add! to-states to-state)
   (hash-set! (re/fa-state-edges from-state) symbol to-states))
 
+;; Gets direction to other states that could be reached by symbol
 (define (get-states state symbol)
   (define has-to-state (hash-has-key? (re/fa-state-edges state) symbol))
   (if has-to-state (hash-ref (re/fa-state-edges state) symbol) (mutable-set)))
 
+;; Gets all possible symbols that could be used to go to other states from current state
 (define (get-symbols state)
   (hash-keys (re/fa-state-edges state)))
 
-
+;; Takes finite automaton and tries to match it with string s
+;; Raise exception if several states were found during the attempt of reaching next state.
 (define (re/match fa s)
   (define symbols (string->list s))
   (define (match-inner state symbols)
@@ -37,9 +46,9 @@
 
 (define alphabet (string->list "abcdefghijklmnopqrstuvwxyz"))
 
+;; Converts string to finite automaton
 (define (re/string->fa s)
   (define symbols (string->list s))
-
 
   (define (add-symbol state symbol)
     (define next-state (new-fa-state))
@@ -62,6 +71,8 @@
   (set-re/fa-state-is-final?! last-state #t)
   (re/fa first-state last-state))
 
+;; Combines two finite automatons
+;; Requires to match them one after another.
 (define (re/and a b)
   (define first-state (new-fa-state))
   (define last-state (new-fa-state))
@@ -76,7 +87,8 @@
 
   (re/fa first-state last-state))
 
-
+;; Combines two finite automatons
+;; Requires to match any of two
 (define (re/or a b)
   (define first-state (new-fa-state))
   (define last-state (new-fa-state))
@@ -94,11 +106,14 @@
 
   (re/fa first-state last-state))
 
+;; Iterates finite automaton
+;; Allows given automaton to be matched zero or more times
 (define (re/iter a)
   (add-state (re/fa-last-state a) 'eps (re/fa-first-state a))
   (add-state (re/fa-first-state a) 'eps (re/fa-last-state a))
   a)
 
+;; Converts non-determenistic automaton to determenistic automaton
 (define (re/ndfa->dfa fa)
   (define new-states (make-hash))
 
@@ -146,11 +161,12 @@
       (define next-state (get-state closure-next-set-of-states))
       (add-state state symbol next-state)
       (unless had-state
-       (bfs closure-next-set-of-states))))
+        (bfs closure-next-set-of-states))))
 
   (bfs first-set-of-states)
   (re/fa (get-state first-set-of-states) #f))
 
+;; Parse simple regular expressions from leetcode problem
 (define (parse regexp)
   (define symbol (first regexp))
   (define is-iter (and (not (empty? (rest regexp))) (eq? #\* (first (rest regexp)))))
